@@ -1,7 +1,7 @@
 # Astha Chamma View
 An Android Library of a game view in indian ludo.
 
-[![](https://jitpack.io/v/Vikram2921/AsthaChammaView.svg)](https://jitpack.io/#Vikram2921/AsthaChammaView)
+[![](https://jitpack.io/v/Vikram2921/AsthaChammaGameView.svg)](https://jitpack.io/#Vikram2921/AsthaChammaGameView)
 
 ### Installation
 Add it in your root build.gradle at the end of repositories:
