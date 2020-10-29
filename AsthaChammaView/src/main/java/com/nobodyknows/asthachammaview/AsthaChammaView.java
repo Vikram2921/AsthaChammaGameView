@@ -17,6 +17,7 @@ import com.nobodyknows.asthachammaview.interfaces.AshtaChammaListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AsthaChammaView extends LinearLayout {
@@ -39,6 +40,10 @@ public class AsthaChammaView extends LinearLayout {
     private static final String PLAYER4ALIAS4 = "player4alias4";
     private Context context;
     private LinearLayout root,board;
+    private int player1AliasColor = getResources().getColor(R.color.alias1);
+    private int player2AliasColor = getResources().getColor(R.color.alias2);
+    private int player3AliasColor = getResources().getColor(R.color.alias3);
+    private int player4AliasColor = getResources().getColor(R.color.alias4);
     private LayoutInflater layoutInflater;
     private AshtaChammaListener ashtaChammaListener;
     private FlexboxLayout box11,box12,box13,box14,box15;
@@ -104,6 +109,116 @@ public class AsthaChammaView extends LinearLayout {
         super(context, attrs);
         this.context = context;
         init(attrs,0);
+    }
+
+    private ArrayList<String> getAllPlayerAliasesInPos(String pos) {
+        ArrayList<String> positionAliasList = new ArrayList<>();
+        for(int i=1;i<=4;i++) {
+            for(int j=1;j<=4;j++) {
+                if(positionMap.get("player"+i+"alias"+j).equals(pos)){
+                    positionAliasList.add("player"+i+"alias"+j);
+                }
+            }
+        }
+        return positionAliasList;
+    }
+
+    private Boolean checkForWinner(ArrayList<String> positionList, List<String> aliasList) {
+        Boolean isWinner = true;
+        for(String alias:aliasList) {
+            if(positionList.contains(alias)) {
+                isWinner = true;
+            } else {
+                isWinner = false;
+                break;
+            }
+        }
+        return isWinner;
+    }
+
+    private List<String> getPlayerAliasListByPlayerNumber(int playerNumber) {
+        if(playerNumber == 1) {
+            return Arrays.asList(PLAYER1ALIAS1,PLAYER1ALIAS2,PLAYER1ALIAS3,PLAYER1ALIAS4);
+        } else if(playerNumber == 2) {
+            return Arrays.asList(PLAYER2ALIAS1,PLAYER2ALIAS2,PLAYER2ALIAS3,PLAYER2ALIAS4);
+        } else if(playerNumber == 3) {
+            return Arrays.asList(PLAYER3ALIAS1,PLAYER3ALIAS2,PLAYER3ALIAS3,PLAYER3ALIAS4);
+        } else {
+            return Arrays.asList(PLAYER4ALIAS1,PLAYER4ALIAS2,PLAYER4ALIAS3,PLAYER4ALIAS4);
+        }
+    }
+
+    private void checkForResult(String newPos, int playerNumber, String playerAliasNumber) {
+        if(newPos.equals("3_3")) {
+            Boolean isWinner = false;
+            if(playerNumber == 1) {
+                isWinner = checkForWinner(getAllPlayerAliasesInPos("3_3"),getPlayerAliasListByPlayerNumber(playerNumber));
+            } else if(playerNumber == 2) {
+                isWinner = checkForWinner(getAllPlayerAliasesInPos("3_3"),getPlayerAliasListByPlayerNumber(playerNumber));
+            }  else if(playerNumber == 3) {
+                isWinner = checkForWinner(getAllPlayerAliasesInPos("3_3"),getPlayerAliasListByPlayerNumber(playerNumber));
+            }  else if(playerNumber == 4) {
+                isWinner = checkForWinner(getAllPlayerAliasesInPos("3_3"),getPlayerAliasListByPlayerNumber(playerNumber));
+            }
+            if(isWinner) {
+                ashtaChammaListener.onPlayerWin(playerNumber);
+            }
+        } else {
+            if(!newPos.equals("1_3") && !newPos.equals("5_3") && !newPos.equals("3_5") && !newPos.equals("3_1")) {
+                ArrayList<String> positionAlias = getAllPlayerAliasesInPos(newPos);
+                if(positionAlias.size() == 1) {
+                    List<String> myAlias = getPlayerAliasListByPlayerNumber(playerNumber);
+                    if(!myAlias.contains(positionAlias.get(0))) {
+                        String opPlayerALias = positionAlias.get(0);
+                        if(playerNumber == 1) {
+                            if(getPlayerAliasListByPlayerNumber(2).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,2,newPos);
+                            } else if(getPlayerAliasListByPlayerNumber(3).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,3,newPos);
+                            }  else if(getPlayerAliasListByPlayerNumber(4).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,4,newPos);
+                            }
+                        } else if(playerNumber == 2) {
+                            if(getPlayerAliasListByPlayerNumber(1).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,1,newPos);
+                            } else if(getPlayerAliasListByPlayerNumber(3).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,3,newPos);
+                            }  else if(getPlayerAliasListByPlayerNumber(4).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,4,newPos);
+                            }
+                        } else if(playerNumber == 3) {
+                            if(getPlayerAliasListByPlayerNumber(1).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,1,newPos);
+                            } else if(getPlayerAliasListByPlayerNumber(2).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,2,newPos);
+                            }  else if(getPlayerAliasListByPlayerNumber(4).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,4,newPos);
+                            }
+                        } else if(playerNumber == 4) {
+                            if(getPlayerAliasListByPlayerNumber(1).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,1,newPos);
+                            } else if(getPlayerAliasListByPlayerNumber(3).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,3,newPos);
+                            }  else if(getPlayerAliasListByPlayerNumber(2).contains(opPlayerALias)) {
+                                cutAndUpdate(opPlayerALias,2,newPos);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void cutAndUpdate(String opPlayerALias,int playerNumber,String oldPos) {
+        if(playerNumber == 1) {
+            removeParentAndAddIn(getAliasView(opPlayerALias),getNextBox("1_3"),opPlayerALias,"1_3",oldPos,playerNumber,false);
+        } else if(playerNumber == 2) {
+            removeParentAndAddIn(getAliasView(opPlayerALias),getNextBox("3_5"),opPlayerALias,"3_5",oldPos,playerNumber,false);
+        } else if(playerNumber == 3) {
+            removeParentAndAddIn(getAliasView(opPlayerALias),getNextBox("5_3"),opPlayerALias,"5_3",oldPos,playerNumber,false);
+        } else {
+            removeParentAndAddIn(getAliasView(opPlayerALias),getNextBox("3_1"),opPlayerALias,"3_1",oldPos,playerNumber,false);
+        }
     }
 
     private void init(AttributeSet attrs, int defStyle) {
@@ -342,22 +457,24 @@ public class AsthaChammaView extends LinearLayout {
 
     private void move(String playerAliasNumber,String homeID,int move,int playerNumber) {
         String pos = "";
-        if(positionMap.get(playerAliasNumber).equals(homeID)) {
-            if(move == 1) {
-                pos = getPosition(playerNumber,move,homeID);
-                removeParentAndAddIn(getAliasView(playerAliasNumber),getNextBox(pos),playerAliasNumber,pos,positionMap.get(playerAliasNumber),playerNumber);
+        String currentPos=positionMap.get(playerAliasNumber);
+        if(!currentPos.equals("3_3")) {
+            if(currentPos.equals(homeID)) {
+                if(move == 1) {
+                    pos = getPosition(playerNumber,move,homeID);
+                    removeParentAndAddIn(getAliasView(playerAliasNumber),getNextBox(pos),playerAliasNumber,pos,currentPos,playerNumber,true);
+                }
+            } else {
+                pos = getPosition(playerNumber,move,currentPos);
+                removeParentAndAddIn(getAliasView(playerAliasNumber),getNextBox(pos),playerAliasNumber,pos,currentPos,playerNumber,true);
             }
-        } else {
-            pos = getPosition(playerNumber,move,positionMap.get(playerAliasNumber));
-            removeParentAndAddIn(getAliasView(playerAliasNumber),getNextBox(pos),playerAliasNumber,pos,positionMap.get(playerAliasNumber),playerNumber);
         }
     }
 
-    private void removeParentAndAddIn(View view,FlexboxLayout flexboxLayout,String playerAliasNumber,String newPos,String oldPos,int playerNumber) {
+    private void removeParentAndAddIn(View view,FlexboxLayout flexboxLayout,String playerAliasNumber,String newPos,String oldPos,int playerNumber,Boolean checkResult) {
         if(!moveWithAnimation) {
             ((ViewGroup)view.getParent()).removeView(view);
             flexboxLayout.addView(view);
-            positionMap.put(playerAliasNumber,newPos);
         } else {
 //            Animation animation;
 //            ArrayList<String> moves = getPlayerMovesList(playerNumber);
@@ -371,6 +488,12 @@ public class AsthaChammaView extends LinearLayout {
 //            }
 //            positionMap.put(playerAliasNumber,newPos);
         }
+        if(checkResult) {
+            checkForResult(newPos,playerNumber,playerAliasNumber);
+        } else {
+            ashtaChammaListener.onPlayerCut(playerNumber,playerAliasNumber);
+        }
+        positionMap.put(playerAliasNumber,newPos);
     }
 
     public void movePlayer1(int playerAliasNumber,int diceValue) {
