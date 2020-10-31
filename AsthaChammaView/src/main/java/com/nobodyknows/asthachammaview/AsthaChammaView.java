@@ -1,17 +1,26 @@
 package com.nobodyknows.asthachammaview;
 
+import android.animation.AnimatorInflater;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.flexbox.FlexboxLayout;
+import com.nobodyknows.asthachammaview.DTO.Player;
 import com.nobodyknows.asthachammaview.interfaces.AshtaChammaListener;
 
 import java.util.ArrayList;
@@ -19,9 +28,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class AsthaChammaView extends LinearLayout {
 
+    private Player player1,player2,player3,player4;
+    private CardView cardView;
     private static final String PLAYER1ALIAS1 = "player1alias1";
     private static final String PLAYER1ALIAS2 = "player1alias2";
     private static final String PLAYER1ALIAS3 = "player1alias3";
@@ -39,13 +51,16 @@ public class AsthaChammaView extends LinearLayout {
     private static final String PLAYER4ALIAS3 = "player4alias3";
     private static final String PLAYER4ALIAS4 = "player4alias4";
     private Context context;
-    private LinearLayout root,board;
+    private LinearLayout root,selectView;
+    private ArrayList<Integer> rollDiceCache = new ArrayList<>();
+    private RelativeLayout board,myPlayerInfo;
     private int player1AliasColor = getResources().getColor(R.color.alias1);
     private int player2AliasColor = getResources().getColor(R.color.alias2);
     private int player3AliasColor = getResources().getColor(R.color.alias3);
     private int player4AliasColor = getResources().getColor(R.color.alias4);
     private LayoutInflater layoutInflater;
     private AshtaChammaListener ashtaChammaListener;
+    private ArrayList<String> blackorwhite = new ArrayList<>(Arrays.asList("B","F"));
     private FlexboxLayout box11,box12,box13,box14,box15;
     private FlexboxLayout box21,box22,box23,box24,box25;
     private FlexboxLayout box31,box32,box33,box34,box35;
@@ -61,6 +76,13 @@ public class AsthaChammaView extends LinearLayout {
     private View player3alias1,player3alias2,player3alias3,player3alias4;
     private View player4alias1,player4alias2,player4alias3,player4alias4;
     private Boolean moveWithAnimation = false;
+    private RelativeLayout player1info,player2info,player3info,player4info;
+    private ImageView player1shell1,player1shell2,player1shell3,player1shell4;
+    private ImageView player2shell1,player2shell2,player2shell3,player2shell4;
+    private ImageView player3shell1,player3shell2,player3shell3,player3shell4;
+    private ImageView player4shell1,player4shell2,player4shell3,player4shell4;
+    private int myPlayerNumber = 1;
+
     public AshtaChammaListener getAshtaChammaListener() {
         return ashtaChammaListener;
     }
@@ -83,6 +105,86 @@ public class AsthaChammaView extends LinearLayout {
 
     public Boolean getMoveWithAnimation() {
         return moveWithAnimation;
+    }
+
+    public Player getPlayer1() {
+        return player1;
+    }
+
+    public void setPlayer1(Player player1) {
+        this.player1 = player1;
+    }
+
+    public Player getPlayer2() {
+        return player2;
+    }
+
+    public void setPlayer2(Player player2) {
+        this.player2 = player2;
+    }
+
+    public Player getPlayer3() {
+        return player3;
+    }
+
+    public void setPlayer3(Player player3) {
+        this.player3 = player3;
+    }
+
+    public Player getPlayer4() {
+        return player4;
+    }
+
+    public void setPlayer4(Player player4) {
+        this.player4 = player4;
+    }
+
+    public int getMyPlayerNumber() {
+        return myPlayerNumber;
+    }
+
+    public void setMyPlayerNumber(int myPlayerNumber) {
+        disableAndEnableAliasForPlayer(1,false);
+        disableAndEnableAliasForPlayer(2,false);
+        disableAndEnableAliasForPlayer(3,false);
+        disableAndEnableAliasForPlayer(4,false);
+        this.myPlayerNumber = myPlayerNumber;
+        rollDiceCache.clear();
+        if(myPlayerNumber == 1) {
+            myPlayerInfo = player1info;
+            player1info.setEnabled(true);
+            player2info.setEnabled(false);
+            player3info.setEnabled(false);
+            player4info.setEnabled(false);
+        } else if(myPlayerNumber == 2) {
+            myPlayerInfo = player2info;
+            player1info.setEnabled(false);
+            player2info.setEnabled(true);
+            player3info.setEnabled(false);
+            player4info.setEnabled(false);
+        }  else if(myPlayerNumber == 3) {
+            myPlayerInfo = player3info;
+            player1info.setEnabled(false);
+            player2info.setEnabled(false);
+            player3info.setEnabled(true);
+            player4info.setEnabled(false);
+        }  else if(myPlayerNumber == 4) {
+            myPlayerInfo = player4info;
+            player1info.setEnabled(false);
+            player2info.setEnabled(false);
+            player3info.setEnabled(false);
+            player4info.setEnabled(true);
+        }
+    }
+
+    public void updateCurrentPlayerTurn(int playerNumber) {
+        rollDiceCache.clear();
+        if(playerNumber == myPlayerNumber) {
+            myPlayerInfo.setEnabled(true);
+            disableAndEnableAliasForPlayer(myPlayerNumber,true);
+        } else {
+            myPlayerInfo.setEnabled(false);
+        }
     }
 
     private void setMoveWithAnimation(Boolean moveWithAnimation) {
@@ -232,48 +334,243 @@ public class AsthaChammaView extends LinearLayout {
             typedArray.recycle();
         }
         root = (LinearLayout) layoutInflater.inflate(R.layout.astha_chamme_view,this,true);
+        selectView = root.findViewById(R.id.selectView);
+        cardView = root.findViewById(R.id.cardview);
         board = root.findViewById(R.id.board);
         initBoxes();
+        initInfos();
         createAlias();
         resetView();
+        setMyPlayerNumber(1);
+    }
+
+    private void initInfos() {
+        player1info = root.findViewById(R.id.player1info);
+        player2info = root.findViewById(R.id.player2info);
+        player3info = root.findViewById(R.id.player3info);
+        player4info = root.findViewById(R.id.player4info);
+
+        player1shell1 = root.findViewById(R.id.player1shell1);
+        player1shell2 = root.findViewById(R.id.player1shell2);
+        player1shell3 = root.findViewById(R.id.player1shell3);
+        player1shell4 = root.findViewById(R.id.player1shell4);
+
+        player2shell1 = root.findViewById(R.id.player2shell1);
+        player2shell2 = root.findViewById(R.id.player2shell2);
+        player2shell3 = root.findViewById(R.id.player2shell3);
+        player2shell4 = root.findViewById(R.id.player2shell4);
+
+        player3shell1 = root.findViewById(R.id.player3shell1);
+        player3shell2 = root.findViewById(R.id.player3shell2);
+        player3shell3 = root.findViewById(R.id.player3shell3);
+        player3shell4 = root.findViewById(R.id.player3shell4);
+
+        player4shell1 = root.findViewById(R.id.player4shell1);
+        player4shell2 = root.findViewById(R.id.player4shell2);
+        player4shell3 = root.findViewById(R.id.player4shell3);
+        player4shell4 = root.findViewById(R.id.player4shell4);
+
+        player1info.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                rollDice(1,player1shell1,player1shell2,player1shell3,player1shell4);
+            }
+        });
+        player2info.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                rollDice(2,player2shell1,player2shell2,player2shell3,player2shell4);
+            }
+        });
+        player3info.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                rollDice(3,player3shell1,player3shell2,player3shell3,player3shell4);
+            }
+        });
+        player4info.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                rollDice(4,player4shell1,player4shell2,player4shell3,player4shell4);
+            }
+        });
+
+    }
+
+    private void rollDice(int playerNumber,ImageView shell1,ImageView shell2,ImageView shell3,ImageView shell4) {
+        String dice1 = randomCode();
+        String dice2 = randomCode();
+        String dice3 = randomCode();
+        String dice4 = randomCode();
+        updateDiceImage(shell1,dice1);
+        updateDiceImage(shell2,dice2);
+        updateDiceImage(shell3,dice3);
+        updateDiceImage(shell4,dice4);
+        int codeValue = getCodeValue(dice1,dice2,dice3,dice4);
+        rollDiceCache.add(codeValue);
+        if(codeValue != 4 && codeValue != 8) {
+            List<String> myAliases = getPlayerAliasListByPlayerNumber(playerNumber);
+            if(!rollDiceCache.contains(1)) {
+
+            } else {
+                ashtaChammaListener.onShellRoll(playerNumber,rollDiceCache);
+                disableAndEnableAliasForPlayer(playerNumber,true);
+                if(playerNumber == 1) {
+                    player1info.setEnabled(false);
+                } else if(playerNumber == 2) {
+                    player2info.setEnabled(false);
+                }  else if(playerNumber == 3) {
+                    player3info.setEnabled(false);
+                }  else if(playerNumber == 4) {
+                    player4info.setEnabled(false);
+                }
+            }
+        } else {
+            if(rollDiceCache.size()>=3) {
+                if(rollDiceCache.get(rollDiceCache.size()-3) == 4 && rollDiceCache.get(rollDiceCache.size()-2) == 4 && rollDiceCache.get(rollDiceCache.size()-1) == 4) {
+                    rollDiceCache.clear();
+                    ashtaChammaListener.onShellRoll(playerNumber,rollDiceCache);
+                }
+                if(rollDiceCache.get(rollDiceCache.size()-3) == 8 && rollDiceCache.get(rollDiceCache.size()-2) == 8 && rollDiceCache.get(rollDiceCache.size()-1) == 8) {
+                    rollDiceCache.clear();
+                    ashtaChammaListener.onShellRoll(playerNumber,rollDiceCache);
+                }
+            }
+        }
+    }
+
+    private int getCodeValue(String code1,String code2,String code3,String code4) {
+        int code = 0;
+        if(code1.equals("B") && code2.equals("B") && code3.equals("B") && code4.equals("B")) {
+            code = 8;
+        } else {
+            if(code1.equals("F")) {
+                code++;
+            }
+            if(code2.equals("F")) {
+                code++;
+            }
+            if(code3.equals("F")) {
+                code++;
+            }
+            if(code4.equals("F")) {
+                code++;
+            }
+        }
+        return code;
+    }
+
+    private String randomCode() {
+        Random random = new Random();
+        return  blackorwhite.get(random.nextInt(2));
+    }
+
+    private void updateDiceImage(ImageView imageView,String code) {
+        if(code.equals("F")) {
+            setImage(R.drawable.front_shell,imageView);
+        } else {
+            setImage(R.drawable.back_shell,imageView);
+        }
+    }
+
+    private void setImage(int image, ImageView imageView) {
+        setImageDrawableWithAnimation(imageView, ContextCompat.getDrawable(getContext(), image));
+    }
+    public void setImageDrawableWithAnimation(ImageView imageView, Drawable drawable) {
+        ObjectAnimator anim = (ObjectAnimator) AnimatorInflater.loadAnimator(getContext(), R.animator.fliping);
+        anim.setTarget(imageView);
+        anim.setDuration(300);
+        anim.start();
+        imageView.setImageDrawable(drawable);
     }
 
     private void createAlias() {
-        player1alias1 = getAlias(1,1);
-        player1alias2 = getAlias(1,2);
-        player1alias3 = getAlias(1,3);
-        player1alias4 = getAlias(1,4);
+        player1alias1 = getAlias(1,1,PLAYER1ALIAS1);
+        player1alias2 = getAlias(1,2,PLAYER1ALIAS2);
+        player1alias3 = getAlias(1,3,PLAYER1ALIAS3);
+        player1alias4 = getAlias(1,4,PLAYER1ALIAS4);
 
-        player2alias1 = getAlias(2,1);
-        player2alias2 = getAlias(2,2);
-        player2alias3 = getAlias(2,3);
-        player2alias4 = getAlias(2,4);
+        player2alias1 = getAlias(2,1,PLAYER2ALIAS1);
+        player2alias2 = getAlias(2,2,PLAYER2ALIAS2);
+        player2alias3 = getAlias(2,3,PLAYER2ALIAS3);
+        player2alias4 = getAlias(2,4,PLAYER2ALIAS4);
 
-        player3alias1 = getAlias(3,1);
-        player3alias2 = getAlias(3,2);
-        player3alias3 = getAlias(3,3);
-        player3alias4 = getAlias(3,4);
+        player3alias1 = getAlias(3,1,PLAYER3ALIAS1);
+        player3alias2 = getAlias(3,2,PLAYER3ALIAS2);
+        player3alias3 = getAlias(3,3,PLAYER3ALIAS3);
+        player3alias4 = getAlias(3,4,PLAYER3ALIAS4);
 
-        player4alias1 = getAlias(4,1);
-        player4alias2 = getAlias(4,2);
-        player4alias3 = getAlias(4,3);
-        player4alias4 = getAlias(4,4);
+        player4alias1 = getAlias(4,1,PLAYER4ALIAS1);
+        player4alias2 = getAlias(4,2,PLAYER4ALIAS2);
+        player4alias3 = getAlias(4,3,PLAYER4ALIAS3);
+        player4alias4 = getAlias(4,4,PLAYER4ALIAS4);
     }
 
-    private View getAlias(int playerNumber,int number) {
-        View view =  layoutInflater.inflate(R.layout.playeraliasview,null);
-        TextView textView = view.findViewById(R.id.aliasnumber);
-        textView.setText(number+"");
+    private void disableAndEnableAliasForPlayer(int playerNumber,Boolean value) {
         if(playerNumber == 1) {
-            view.setBackgroundResource(R.drawable.alias1);
+            player1alias1.setEnabled(value);
+            player1alias2.setEnabled(value);
+            player1alias3.setEnabled(value);
+            player1alias4.setEnabled(value);
         } else if(playerNumber == 2) {
-            view.setBackgroundResource(R.drawable.alias2);
-        } else if(playerNumber == 3) {
-            view.setBackgroundResource(R.drawable.alias3);
+            player2alias1.setEnabled(value);
+            player2alias2.setEnabled(value);
+            player2alias3.setEnabled(value);
+            player2alias4.setEnabled(value);
+        }  else if(playerNumber == 3) {
+            player3alias1.setEnabled(value);
+            player3alias2.setEnabled(value);
+            player3alias3.setEnabled(value);
+            player3alias4.setEnabled(value);
         } else if(playerNumber == 4) {
-            view.setBackgroundResource(R.drawable.alias4);
+            player4alias1.setEnabled(value);
+            player4alias2.setEnabled(value);
+            player4alias3.setEnabled(value);
+            player4alias4.setEnabled(value);
         }
+    }
+
+    private View getAlias(int playerNumber,int aliasNumber,String aliasName) {
+        View view =  layoutInflater.inflate(R.layout.playeraliasview,null);
+        ImageView imageView = view.findViewById(R.id.aliasImage);
+        if(playerNumber == 1) {
+            imageView.setImageResource(R.drawable.alias_blue);
+        } else if(playerNumber == 2) {
+            imageView.setImageResource(R.drawable.alias_green);
+        } else if(playerNumber == 3) {
+            imageView.setImageResource(R.drawable.alias_yellow);
+        } else if(playerNumber == 4) {
+            imageView.setImageResource(R.drawable.alias_red);
+        }
+        view.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getContext(),"sadasd",Toast.LENGTH_SHORT).show();
+                if(rollDiceCache.size() > 0) {
+                    showSelectView(view,playerNumber,aliasNumber,aliasName);
+                } else {
+                    cardView.setVisibility(GONE);
+                }
+            }
+        });
         return view;
+    }
+
+    private void showSelectView(View alias, int playerNumber, int aliasNumber, String aliasName) {
+        cardView.setVisibility(VISIBLE);
+        selectView.removeAllViews();
+        for(Integer integer:rollDiceCache) {
+            View view = layoutInflater.inflate(R.layout.selectbuttonview,null);
+            Button button = view.findViewById(R.id.button);
+            button.setText(integer+"");
+            button.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                }
+            });
+            selectView.addView(view);
+        }
     }
 
     private void initBoxes() {

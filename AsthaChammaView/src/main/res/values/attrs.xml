@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="AsthaChammaView">
-        <attr name="height_auto_calculate" format="boolean"></attr>
-        <attr name="extra_padding_in_height_calculation" format="integer"></attr>
+        <attr name="view_height" format="dimension"></attr>
     </declare-styleable>
 </resources>
